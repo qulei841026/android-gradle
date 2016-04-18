@@ -1,0 +1,57 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "24.0.0 rc2"
+
+    signingConfigs {    //配置签名文件
+        config  //自设定安全 keystore
+
+        original {  //官方设定 keystore (参照)
+            storeFile file("../test_keystore.jks")
+            storePassword "123456"
+            keyAlias "android-gradle"
+            keyPassword "654321"
+        }
+    }
+
+    defaultConfig {
+        applicationId "qulei.android.gradle"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+            //signingConfig signingConfigs.original
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.3.0'
+}
+
+//读取配置信息及设定签名文件信息
+def keystore = rootProject.file('keystore.properties')
+if (keystore.canRead()) {
+    def props = new Properties();
+    props.load(new FileInputStream(keystore))
+
+    if (props != null) {
+        android.signingConfigs.config.storeFile file(props['store_file'])
+        android.signingConfigs.config.storePassword props['store_password']
+        android.signingConfigs.config.keyAlias props['key_alias']
+        android.signingConfigs.config.keyPassword props['key_password']
+    } else {
+        println 'some parameters in \'keystore.properties\' not found!'
+    }
+} else {
+    println '\'keystore.properties\' not found!'
+}
