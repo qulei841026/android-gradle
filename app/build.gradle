@@ -4,6 +4,17 @@ android {
     compileSdkVersion 23
     buildToolsVersion "24.0.0 rc2"
 
+    def version_code = getVersionCode();
+    def version_name = getVersionName();
+
+    defaultConfig {
+        applicationId "qulei.android.gradle"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode version_code
+        versionName version_name.toString()
+    }
+
     signingConfigs {    //配置签名文件
         config  //自设定安全 keystore
 
@@ -15,13 +26,6 @@ android {
         }
     }
 
-    defaultConfig {
-        applicationId "qulei.android.gradle"
-        minSdkVersion 15
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
-    }
     buildTypes {
         release {
             minifyEnabled false
@@ -30,6 +34,11 @@ android {
             //signingConfig signingConfigs.original
         }
     }
+}
+
+assembleRelease {}.doLast {
+    updateVersionCode()
+    updateVersionName()
 }
 
 dependencies {
@@ -55,3 +64,68 @@ if (keystore.canRead()) {
 } else {
     println '\'keystore.properties\' not found!'
 }
+
+// 自增长版本号管理-获取版本号
+def getVersionCode() {
+    def version = rootProject.file('version.properties')
+    if (version.canRead()) {
+        def props = new Properties()
+        props.load(new FileInputStream(version))
+        def versionCode = props['build.number'].toInteger()
+        return versionCode
+    } else {
+        throw new GradleException("Could not find version.properties!")
+    }
+}
+
+// 自增长版本号管理-更新版本号
+def updateVersionCode() {
+    def version = rootProject.file('version.properties')
+    if (version.canWrite()) {
+        def properties = new Properties()
+        properties.load(new FileInputStream(version))
+        def versionCode = properties['build.number'].toInteger()
+        properties['build.number'] = (versionCode + 1).toString()
+        properties.store(version.newWriter(), null)
+        println('Updated version code to ' + versionCode.toString())
+    } else {
+        throw new GradleException("Could not find version.properties!")
+    }
+}
+
+def getVersionName() {
+    def version = rootProject.file('version.properties')
+    if (version.canRead()) {
+        def props = new Properties()
+        props.load(new FileInputStream(version))
+        def major = props['version_major'].toString();
+        def minor = props['version_minor'].toString();
+        def patch = props['version_patch'].toString();
+        def versionName = 'v' + major + '.' + minor + '.' + patch
+        return versionName
+    } else {
+        throw new GradleException("Could not find version.properties!")
+    }
+}
+
+// major，minor根据业务自行手动修改或自行增加增量规则
+def updateVersionName() {
+    def version = rootProject.file('version.properties')
+    if (version.canWrite()) {
+        def properties = new Properties()
+        properties.load(new FileInputStream(version))
+        def versionPatch = properties['version_patch'].toInteger()
+        properties['version_patch'] = (versionPatch + 1).toString()
+        properties.store(version.newWriter(), null)
+    } else {
+        throw new GradleException("Could not find version.properties!")
+    }
+}
+
+// 时间戳
+def releaseTime() {
+    return new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone("UTC"))
+}
+
+
+
